@@ -2,213 +2,397 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Schneider Electric - Smart Inventory PRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schneider Electric - Digital Inventory Dashboard PRO</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        :root { --green-se: #009639; --bg-gray: #f4f5f7; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-gray); margin: 0; display: flex; height: 100vh; }
-        
-        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; padding: 25px; display: flex; flex-direction: column; }
-        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        :root {
+            --se-green: #009639;
+            --se-dark: #2A2E33;
+            --se-light-gray: #F4F7F6;
+            --bg-body: #E9EDF0;
+            --text-main: #333;
+            --shadow-card: 0 10px 20px rgba(0,0,0,0.05);
+            --transition: all 0.3s ease;
+        }
 
-        /* --- NOUVEAU DASHBOARD --- */
-        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid #ccc; }
-        .stat-card h3 { margin: 0; font-size: 11px; text-transform: uppercase; color: #666; }
-        .stat-card .value { font-size: 24px; font-weight: bold; margin-top: 5px; }
-        .card-total { border-color: #007bff; }
-        .card-ok { border-color: var(--green-se); }
-        .card-manquant { border-color: #d9534f; }
-        .card-surplus { border-color: #f0ad4e; }
+        body { font-family: 'Montserrat', 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-body); margin: 0; color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .status-box { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: bold; text-align: center; }
-        .status-off { background: #f8d7da; color: #721c24; }
-        .status-on { background: #e6f7ec; color: var(--green-se); border: 1px solid var(--green-se); }
+        /* --- Barre Latérale --- */
+        .sidebar { width: 280px; background: white; padding: 30px; display: flex; flex-direction: column; border-right: 1px solid #E1E8ED; box-shadow: 5px 0 15px rgba(0,0,0,0.02); }
+        .brand { font-size: 26px; font-weight: 800; color: var(--se-green); display: flex; align-items: center; margin-bottom: 40px; }
+        .brand i { margin-right: 12px; font-size: 30px; }
+
+        .import-zone { background: var(--se-light-gray); padding: 20px; border-radius: 12px; border: 2px dashed #C3CBD1; text-align: center; cursor: pointer; transition: var(--transition); }
+        .import-zone:hover { border-color: var(--se-green); background: #E6F7EC; }
+        .import-zone i { font-size: 30px; color: #888; margin-bottom: 10px; }
+        .import-zone p { margin: 0; font-size: 13px; font-weight: 600; color: #555; }
+        .import-zone input { display: none; }
+
+        .db-status { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 13px; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+        .db-off { background: #FFEBEB; color: #D9534F; border: 1px solid #FFCACA; }
+        .db-on { background: #E6F7EC; color: var(--se-green); border: 1px solid #C3E6CB; }
+        .db-status i { margin-right: 8px; }
+
+        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 16px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: auto; display: flex; align-items: center; justify-content: center; transition: var(--transition); box-shadow: 0 4px 6px rgba(0, 150, 57, 0.2); }
+        .btn-pdf:hover { background: #007D30; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 150, 57, 0.3); }
+        .btn-pdf i { margin-right: 10px; font-size: 16px; }
+
+        /* --- Contenu Principal --- */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        header h1 { margin: 0; font-size: 32px; font-weight: 800; color: var(--se-dark); }
+        .session-info { font-size: 14px; color: #777; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: var(--shadow-card); }
+
+        /* --- DASHBOARD CARDS (Le truc "Sick") --- */
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 25px; border-radius: 16px; box-shadow: var(--shadow-card); display: flex; align-items: center; transition: var(--transition); position: relative; overflow: hidden; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
         
-        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; outline: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid #eee; font-size: 12px; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .stat-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 20px; }
+        .card-sap .stat-icon { background: #E6F0FF; color: #007BFF; }
+        .card-scanned .stat-icon { background: #E6F7EC; color: var(--se-green); }
+        .card-ok .stat-icon { background: #FFF9E6; color: #F0AD4E; }
+        .card-error .stat-icon { background: #FFEBEB; color: #D9534F; }
+
+        .stat-info h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 5px; }
+        .stat-info .value { font-size: 32px; font-weight: 800; color: var(--se-dark); }
+        .stat-info .unit { font-size: 14px; color: #aaa; margin-left: 5px; }
+
+        /* --- Zone de Scan --- */
+        .scan-zone { background: white; padding: 25px; border-radius: 16px; box-shadow: var(--shadow-card); margin-bottom: 30px; display: flex; align-items: center; gap: 20px; }
+        .scan-zone i { font-size: 40px; color: var(--se-green); }
+        .input-wrapper { flex: 1; position: relative; }
+        input[type="text"] { width: 100%; padding: 18px 20px 18px 50px; border: 2px solid #E1E8ED; border-radius: 12px; font-size: 16px; font-family: inherit; font-weight: 600; transition: var(--transition); box-sizing: border-box; }
+        input[type="text"]:focus { border-color: var(--se-green); box-shadow: 0 0 10px rgba(0, 150, 57, 0.1); outline: none; }
+        .input-wrapper i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #A0AAB3; }
+
+        /* --- Tableau --- */
+        .table-container { background: white; border-radius: 16px; box-shadow: var(--shadow-card); flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .table-header { padding: 20px 25px; border-bottom: 1px solid #E1E8ED; display: flex; justify-content: space-between; align-items: center; }
+        .table-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
         
-        .btn-pdf { background: var(--green-se); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .badge-neg { background: #f8d7da; color: #d9534f; }
-        .badge-pos { background: #fff3cd; color: #856404; }
-        .badge-ok { background: #d4edda; color: var(--green-se); }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background-color: var(--se-light-gray); position: sticky; top: 0; z-index: 10; }
+        th { padding: 15px 25px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #777; font-weight: 700; border-bottom: 2px solid #E1E8ED; }
+        tbody { overflow-y: auto; }
+        tr { transition: var(--transition); }
+        tr:hover { background-color: #F9FBFC; }
+        td { padding: 15px 25px; border-bottom: 1px solid #E1E8ED; font-size: 14px; color: var(--se-dark); }
+        td b { font-weight: 700; }
+
+        .badge { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; text-align: center; display: inline-block; }
+        .status-perfect { background: #E6F7EC; color: var(--se-green); }
+        .status-missing { background: #FFEBEB; color: #D9534F; }
+        .status-excess { background: #FFF9E6; color: #F0AD4E; }
+
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2 style="color: var(--green-se);">🟢 Schneider</h2>
-        <div class="card" style="padding: 15px; border: 1px dashed var(--green-se);">
-            <div style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">1. IMPORTER L'EXTRACTION SAP</div>
+        <div class="brand"><i class="fa-solid fa-satellite-dish"></i> SmartScan</div>
+        
+        <label class="import-zone" for="csv-file">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p>Importer Extraction SAP (CSV)</p>
+            <span style="font-size: 10px; color: #aaa;">(Réinitialise l'inventaire)</span>
             <input type="file" id="csv-file" accept=".csv" onclick="this.value=null;">
+        </label>
+
+        <div id="db-status" class="db-status db-off">
+            <i class="fa-solid fa-circle-xmark"></i> ATTENTE FICHIER SAP
         </div>
-        <div id="db-status" class="status-box status-off">❌ EN ATTENTE DU FICHIER</div>
-        <button class="btn-pdf" onclick="exportPDF()">📄 GÉNÉRER LE RAPPORT PDF</button>
+        
+        <button class="btn-pdf" onclick="exportPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Exporter Rapport PDF
+        </button>
     </div>
 
     <div class="main-content">
         <header>
-            <h1>Inventaire Digitalisé</h1>
-            <p id="date-label" style="color: #666;"></p>
+            <h1>Digital Inventory Dashboard</h1>
+            <div class="session-info">
+                <i class="fa-solid fa-calendar-days"></i> <span id="session-date"></span> | Opérateur: <b style="color:var(--se-green)">PRO USER</b>
+            </div>
         </header>
 
         <div class="dashboard">
-            <div class="stat-card card-total">
-                <h3>Total SAP</h3>
-                <div id="stat-sap" class="value">0</div>
+            <div class="stat-card card-sap">
+                <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
+                <div class="stat-info">
+                    <h3>Total SAP</h3>
+                    <div id="stat-sap-qty" class="value">0</div>
+                    <span class="unit">Articles (Théo)</span>
+                </div>
+            </div>
+            <div class="stat-card card-scanned">
+                <div class="stat-icon"><i class="fa-solid fa-barcode"></i></div>
+                <div class="stat-info">
+                    <h3>Total Scanné</h3>
+                    <div id="stat-scan-qty" class="value">0</div>
+                    <span class="unit">Articles (Réel)</span>
+                </div>
             </div>
             <div class="stat-card card-ok">
-                <h3>Conformes</h3>
-                <div id="stat-ok" class="value">0</div>
+                <div class="stat-icon"><i class="fa-solid fa-check-double"></i></div>
+                <div class="stat-info">
+                    <h3>Refs. Conformes</h3>
+                    <div id="stat-ok-refs" class="value">0</div>
+                    <span class="unit">Lignes (Écart 0)</span>
+                </div>
             </div>
-            <div class="stat-card card-manquant">
-                <h3>Manquants</h3>
-                <div id="stat-manquant" class="value">0</div>
-            </div>
-            <div class="stat-card card-surplus">
-                <h3>Surplus</h3>
-                <div id="stat-surplus" class="value">0</div>
+            <div class="stat-card card-error">
+                <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="stat-info">
+                    <h3>Alerte Écarts</h3>
+                    <div id="stat-error-refs" class="value">0</div>
+                    <span class="unit">Lignes à vérifier</span>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <div style="font-size: 11px; font-weight: bold; margin-bottom: 10px;">2. SCANNER LES PRODUITS SUR LE TERRAIN</div>
-            <input type="text" id="barcode-input" placeholder="Attente du fichier SAP..." disabled>
-            <div id="scan-feedback" style="margin-top: 10px; font-weight: bold;"></div>
+        <div class="scan-zone">
+            <i class="fa-solid fa-qrcode"></i>
+            <div class="input-wrapper">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="barcode-input" placeholder="Veuillez d'abord importer le fichier SAP..." disabled>
+            </div>
         </div>
 
-        <div class="card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Référence</th>
-                        <th>Désignation</th>
-                        <th>SAP (Théo)</th>
-                        <th>Terrain (Réel)</th>
-                        <th>Écart</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body"></tbody>
-            </table>
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Liste des écarts d'inventaire</h2>
+                <span id="scan-feedback" style="font-weight: 700; font-size: 13px;"></span>
+            </div>
+            <div style="flex: 1; overflow-y: auto;">
+                <table id="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Désignation technique</th>
+                            <th>Stock SAP</th>
+                            <th>Comptage Réel</th>
+                            <th>Écart</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
+        // Variables globales
         let dbStock = {}; 
         let reelCount = {}; 
 
-        // FONCTION DE REMISE À ZÉRO
+        // Fonction de réinitialisation totale
         function resetSystem() {
             dbStock = {};
             reelCount = {};
             document.getElementById('table-body').innerHTML = "";
-            document.getElementById('stat-sap').innerText = "0";
-            document.getElementById('stat-ok').innerText = "0";
-            document.getElementById('stat-manquant').innerText = "0";
-            document.getElementById('stat-surplus').innerText = "0";
+            document.getElementById('barcode-input').value = "";
             document.getElementById('scan-feedback').innerText = "";
+            updateUI(); // Remet les compteurs à 0
         }
 
+        // --- 1. Importation CSV PapaParse ---
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            resetSystem(); // On vide tout dès qu'un nouveau fichier arrive
+            resetSystem(); // Réinitialisation automatique à l'import
 
             Papa.parse(file, {
                 header: true,
-                delimiter: ";",
+                delimiter: ";", // Point-virgule comme délimiteur
                 skipEmptyLines: true,
                 complete: function(results) {
+                    console.log("Données SAP chargées:", results.data);
+                    
                     results.data.forEach(row => {
+                        // Nettoyage et validation des données
                         if (row.Reference) {
-                            dbStock[row.Reference.trim().toUpperCase()] = {
-                                designation: row.Designation || "Inconnu",
-                                theo: parseInt(row.StockTheorique) || 0
+                            const ref = row.Reference.trim().toUpperCase();
+                            const description = row.Designation || "Désignation inconnue";
+                            const stockSap = parseInt(row.StockTheorique) || 0;
+
+                            dbStock[ref] = {
+                                designation: description,
+                                theo: stockSap
                             };
                         }
                     });
-                    document.getElementById('db-status').innerText = "✅ BASE SAP CHARGÉE";
-                    document.getElementById('db-status').className = "status-box status-on";
-                    document.getElementById('barcode-input').disabled = false;
-                    document.getElementById('barcode-input').placeholder = "Prêt à scanner...";
-                    document.getElementById('stat-sap').innerText = Object.keys(dbStock).length;
-                    document.getElementById('barcode-input').focus();
+
+                    // Mise à jour de l'interface
+                    const status = document.getElementById('db-status');
+                    status.innerHTML = '<i class="fa-solid fa-circle-check"></i> BASE SAP ACTIVÉE';
+                    status.className = "db-status db-on";
+                    
+                    const input = document.getElementById('barcode-input');
+                    input.disabled = false;
+                    input.placeholder = "Scanner un code-barres...";
+                    input.focus();
+
+                    updateUI();
                 }
             });
         });
 
+        // --- 2. Action de Scan (Mode Clavier) ---
         const input = document.getElementById('barcode-input');
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const code = input.value.trim().toUpperCase();
+                const feedback = document.getElementById('scan-feedback');
+                
                 if (dbStock[code]) {
+                    // Ajoute +1 à la QUANTITÉ RÉELLE pour cette référence
                     reelCount[code] = (reelCount[code] || 0) + 1;
+                    updateTable();
                     updateUI();
+                    
+                    feedback.innerText = "✅ Scan réussi : " + dbStock[code].designation;
+                    feedback.style.color = "var(--se-green)";
+                } else if (code !== "") {
+                    // Référence inconnue
+                    feedback.innerText = "❌ ERREUR : Référence inconnue dans SAP";
+                    feedback.style.color = "#D9534F";
                 }
-                input.value = "";
+                
+                input.value = ""; // Vide le champ pour le prochain scan
             }
         });
 
-        function updateUI() {
+        // --- 3. Mise à jour du Tableau de données ---
+        function updateTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
             
-            let ok = 0, manquant = 0, surplus = 0;
-
+            // On ne parcourt que les références scannées (reelCount)
             for (let ref in reelCount) {
                 const data = dbStock[ref];
                 const reel = reelCount[ref];
                 const ecart = reel - data.theo;
                 
-                let badge = "badge-ok";
-                if (ecart < 0) { badge = "badge-neg"; manquant++; }
-                else if (ecart > 0) { badge = "badge-pos"; surplus++; }
-                else { ok++; }
+                let statutBadge = "";
+                let statutTxt = "";
 
-                tbody.innerHTML += `<tr><td><b>${ref}</b></td><td>${data.designation}</td><td>${data.theo}</td><td><b>${reel}</b></td><td><span class="badge ${badge}">${ecart}</span></td></tr>`;
+                if (ecart === 0) {
+                    statutBadge = "status-perfect"; statutTxt = "Conforme";
+                } else if (ecart < 0) {
+                    statutBadge = "status-missing"; statutTxt = "Manquant";
+                } else {
+                    statutBadge = "status-excess"; statutTxt = "Surplus";
+                }
+
+                const row = `
+                    <tr>
+                        <td><b>${ref}</b></td>
+                        <td>${data.designation}</td>
+                        <td>${data.theo}</td>
+                        <td><b>${reel}</b></td>
+                        <td><b>${ecart > 0 ? '+' : ''}${ecart}</b></td>
+                        <td><span class="badge ${statutBadge}">${statutTxt}</span></td>
+                    </tr>`;
+                
+                tbody.innerHTML += row;
             }
-            
-            document.getElementById('stat-ok').innerText = ok;
-            document.getElementById('stat-manquant').innerText = manquant;
-            document.getElementById('stat-surplus').innerText = surplus;
         }
 
+        // --- 4. Mise à jour du Dashboard KPIs (Calcul de quantités) ---
+        function updateUI() {
+            // A. Calcul des Quantités Totales (Pas les refs, les articles)
+            let totalSapQty = 0;
+            // Calcule la somme de toutes les quantités théoriques chargées
+            for (let ref in dbStock) {
+                totalSapQty += dbStock[ref].theo;
+            }
+
+            let totalScanQty = 0;
+            // Calcule la somme de toutes les quantités physiques scannées
+            for (let ref in reelCount) {
+                totalScanQty += reelCount[ref];
+            }
+
+            // B. Calcul du nombre de références (lignes) Conform/Error
+            let okRefs = 0;
+            let errorRefs = 0;
+
+            for (let ref in reelCount) {
+                const ecart = reelCount[ref] - dbStock[ref].theo;
+                if (ecart === 0) {
+                    okRefs++;
+                } else {
+                    errorRefs++;
+                }
+            }
+
+            // C. Mise à jour de l'affichage
+            document.getElementById('stat-sap-qty').innerText = totalSapQty;
+            document.getElementById('stat-scan-qty').innerText = totalScanQty;
+            document.getElementById('stat-ok-refs').innerText = okRefs;
+            document.getElementById('stat-error-refs').innerText = errorRefs;
+        }
+
+        // --- 5. Exportation PDF (jsPDF + AutoTable) ---
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            const dateHeure = new Date().toLocaleDateString() + " à " + new Date().toLocaleTimeString();
+            
+            // Date et Heure
+            const maintenant = new Date();
+            const dateStr = maintenant.toLocaleDateString();
+            const heureStr = maintenant.toLocaleTimeString();
 
-            doc.setFontSize(18);
+            // Style Schneider Green
+            doc.setFontSize(22);
             doc.setTextColor(0, 150, 57);
-            doc.text("Rapport d'Inventaire Schneider", 14, 20);
+            doc.text("RAPPORT D'INVENTAIRE DIGITALISÉ", 14, 20);
             
             doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text("Établi le : " + dateHeure, 14, 28);
+            doc.setTextColor(50);
+            doc.text("Généré par SmartScan PRO le " + dateStr + " à " + heureStr, 14, 28);
+            
+            // Résumé des Quantités
+            doc.setFontSize(12);
+            doc.setTextColor(0);
+            doc.text("RÉSUMÉ DES QUANTITÉS", 14, 38);
+            doc.text("- Total Articles (SAP) : " + document.getElementById('stat-sap-qty').innerText, 16, 45);
+            doc.text("- Total Articles (Réel) : " + document.getElementById('stat-scan-qty').innerText, 16, 51);
 
-            const tableData = Object.keys(reelCount).map(ref => [
-                ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], reelCount[ref] - dbStock[ref].theo
-            ]);
+            // Préparation des données pour le tableau PDF
+            const tableData = [];
+            for (let ref in reelCount) {
+                const data = dbStock[ref];
+                const reel = reelCount[ref];
+                const ecart = reel - data.theo;
+                tableData.push([ref, data.designation, data.theo, reel, ecart]);
+            }
 
+            // Génération du tableau dans le PDF
             doc.autoTable({ 
-                head: [['Référence', 'Désignation', 'SAP', 'Réel', 'Écart']], 
+                head: [['Référence', 'Désignation', 'Stock SAP', 'Comptage Réel', 'Écart']], 
                 body: tableData, 
-                startY: 35, 
-                headStyles: { fillColor: [0, 150, 57] } 
+                startY: 58, 
+                headStyles: { fillColor: [0, 150, 57] }, // Schneider Green
+                alternateRowStyles: { fillColor: [240, 240, 240] },
+                margin: { top: 58 }
             });
             
-            doc.save("Inventaire_Schneider.pdf");
+            doc.save("Inventaire_" + dateStr + "_" + heureStr.replace(/:/g, "-") + ".pdf");
         }
-        
-        document.getElementById('date-label').innerText = "Session du " + new Date().toLocaleDateString();
+
+        // Date du jour dans le header
+        document.getElementById('session-date').innerText = new Date().toLocaleDateString();
     </script>
 </body>
 </html>
