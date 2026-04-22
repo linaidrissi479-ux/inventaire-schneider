@@ -20,7 +20,6 @@
 
         body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-body); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar */
         .sidebar { width: 280px; background: white; padding: 30px; display: flex; flex-direction: column; border-right: 1px solid #E1E8ED; }
         .brand { font-size: 22px; font-weight: 800; color: var(--se-green); margin-bottom: 40px; display: flex; align-items: center; }
         .brand i { margin-right: 12px; }
@@ -32,7 +31,6 @@
         .signature { margin-top: auto; padding: 15px; border-top: 1px solid #eee; font-size: 13px; color: #555; text-align: center; }
         .signature b { color: var(--se-green); font-weight: 800; }
 
-        /* Main Content */
         .main-content { flex: 1; padding: 40px; overflow-y: auto; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         
@@ -47,7 +45,6 @@
         .card-4 { border-color: #28a745; }
         .card-5 { border-color: #dc3545; }
 
-        /* Scan & Table */
         .scan-zone { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 25px; display: flex; align-items: center; gap: 15px; }
         input[type="text"] { flex: 1; padding: 15px; border: 2px solid #E1E8ED; border-radius: 10px; font-size: 16px; font-weight: 600; }
         input[type="text"]:focus { border-color: var(--se-green); outline: none; }
@@ -62,7 +59,8 @@
         .bg-manquant { background: #FFEBEB; color: #D9534F; }
         .bg-surplus { background: #FFF9E6; color: #F0AD4E; }
 
-        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; }
+        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; transition: 0.3s; }
+        .btn-pdf:hover { background: #007D30; transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -117,7 +115,6 @@
         <div class="scan-zone">
             <i class="fa-solid fa-barcode" style="font-size: 30px; color: var(--se-green);"></i>
             <input type="text" id="barcode-input" placeholder="Scanner un produit..." disabled>
-            <span id="feedback" style="font-weight: 700; font-size: 13px;"></span>
         </div>
 
         <div class="table-container">
@@ -181,11 +178,6 @@
                     reelCount[code] = (reelCount[code] || 0) + 1;
                     updateUI();
                     renderTable();
-                    document.getElementById('feedback').innerText = "✅ " + dbStock[code].designation;
-                    document.getElementById('feedback').style.color = "var(--se-green)";
-                } else if (code !== "") {
-                    document.getElementById('feedback').innerText = "⚠️ RÉFÉRENCE INCONNUE";
-                    document.getElementById('feedback').style.color = "red";
                 }
                 this.value = "";
             }
@@ -231,8 +223,9 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const now = new Date();
-            
-            // Mois en lettres pour le nom du fichier
+            const dateStr = now.toLocaleDateString();
+            const heureStr = now.toLocaleTimeString(); 
+
             const moisArr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
             const nomMois = moisArr[now.getMonth()];
 
@@ -256,19 +249,20 @@
                 `Non Conformes : ${document.getElementById('stat-non-conf').innerText}`
             ];
             doc.text(stats.join("  |  "), 15, 62);
+            doc.text(`Généré le : ${dateStr} à ${heureStr}`, 15, 68);
+
             const data = Object.keys(reelCount).map(ref => {
                 const ecart = reelCount[ref] - dbStock[ref].theo;
                 const status = ecart === 0 ? "CONFORME" : (ecart < 0 ? "MANQUANT" : "SURPLUS");
                 return [ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], status + ` (${ecart})`];
             });
+
             doc.autoTable({
                 head: [['Référence', 'Désignation', 'Stock SAP', 'Réel Scan', 'Statut (Écart)']],
                 body: data,
-                startY: 70,
+                startY: 75,
                 headStyles: { fillColor: [0, 150, 57] }
             });
-            
-            // Sauvegarde avec le nom demandé
             doc.save(`inventaire ${nomMois}.pdf`);
         }
         document.getElementById('current-date').innerText = new Date().toLocaleDateString();
