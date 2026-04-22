@@ -34,7 +34,7 @@
         <div class="card" style="padding: 15px; border: 1px dashed var(--green-se); margin-bottom: 15px;">
             <div class="instruction">1. Importer l'extraction SAP</div>
             <input type="file" id="csv-file" accept=".csv" onclick="this.value=null;">
-            <p style="font-size: 10px; color: #888; margin-top: 10px;">En chargeant un fichier, l'inventaire précédent est effacé.</p>
+            <p style="font-size: 10px; color: #888; margin-top: 10px;">Le chargement efface l'inventaire en cours.</p>
         </div>
         <div id="db-status" class="status-box status-off">❌ EN ATTENTE DU FICHIER</div>
         <button class="btn-pdf" onclick="exportPDF()">📄 GÉNÉRER LE RAPPORT PDF</button>
@@ -74,10 +74,14 @@
             const file = e.target.files[0];
             if (!file) return;
 
+            // --- RESET TOTAL ---
             dbStock = {}; 
             reelCount = {}; 
             document.getElementById('table-body').innerHTML = ""; 
-            
+            document.getElementById('scan-feedback').innerText = "Inventaire réinitialisé.";
+            document.getElementById('scan-feedback').style.color = "blue";
+            // -------------------
+
             Papa.parse(file, {
                 header: true,
                 delimiter: ";",
@@ -107,6 +111,11 @@
                 if (dbStock[code]) {
                     reelCount[code] = (reelCount[code] || 0) + 1;
                     updateTable();
+                    document.getElementById('scan-feedback').innerText = "✅ " + dbStock[code].designation;
+                    document.getElementById('scan-feedback').style.color = "#009639";
+                } else if (code !== "") {
+                    document.getElementById('scan-feedback').innerText = "⚠️ Inconnu dans SAP";
+                    document.getElementById('scan-feedback').style.color = "red";
                 }
                 input.value = "";
             }
@@ -127,7 +136,6 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // Récupération de la date et l'heure actuelles
             const maintenant = new Date();
             const dateHeure = maintenant.toLocaleDateString() + " à " + maintenant.toLocaleTimeString();
 
@@ -137,14 +145,10 @@
             
             doc.setFontSize(11);
             doc.setTextColor(100);
-            doc.text("Établi le : " + dateHeure, 14, 28); // Affichage de la date et l'heure
+            doc.text("Établi le : " + dateHeure, 14, 28);
 
             const tableData = Object.keys(reelCount).map(ref => [
-                ref, 
-                dbStock[ref].designation, 
-                dbStock[ref].theo, 
-                reelCount[ref], 
-                reelCount[ref] - dbStock[ref].theo
+                ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], reelCount[ref] - dbStock[ref].theo
             ]);
 
             doc.autoTable({ 
