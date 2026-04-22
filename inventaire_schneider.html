@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartScan - Inventaire par IDRISSI Lina</title>
+    <title>Schneider Electric - Inventaire par Lina IDRISSI</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -22,28 +22,26 @@
 
         /* Sidebar */
         .sidebar { width: 280px; background: white; padding: 30px; display: flex; flex-direction: column; border-right: 1px solid #E1E8ED; }
-        .brand { font-size: 24px; font-weight: 800; color: var(--se-green); margin-bottom: 40px; display: flex; align-items: center; }
-        .brand i { margin-right: 10px; }
+        .brand { font-size: 22px; font-weight: 800; color: var(--se-green); margin-bottom: 40px; display: flex; align-items: center; }
+        .brand i { margin-right: 12px; }
 
         .import-zone { background: #F4F7F6; padding: 20px; border-radius: 12px; border: 2px dashed #C3CBD1; text-align: center; cursor: pointer; transition: 0.3s; }
         .import-zone:hover { border-color: var(--se-green); background: #e6f7ec; }
         .import-zone input { display: none; }
         
-        .signature { margin-top: auto; padding: 15px; border-top: 1px solid #eee; font-size: 12px; color: #888; text-align: center; font-weight: 600; }
-        .signature b { color: var(--se-green); }
+        .signature { margin-top: auto; padding: 15px; border-top: 1px solid #eee; font-size: 13px; color: #555; text-align: center; }
+        .signature b { color: var(--se-green); font-weight: 800; }
 
         /* Main Content */
         .main-content { flex: 1; padding: 40px; overflow-y: auto; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         
-        /* Dashboard 5 colonnes */
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 18px; border-radius: 16px; box-shadow: var(--shadow); border-top: 4px solid #eee; }
         .stat-card h3 { margin: 0; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-card .value { font-size: 24px; font-weight: 800; color: var(--se-dark); margin: 8px 0; }
         .stat-card .desc { font-size: 10px; color: #aaa; }
         
-        /* Couleurs des bordures cards */
         .card-1 { border-color: #007bff; }
         .card-2 { border-color: #6c757d; }
         .card-3 { border-color: var(--se-green); }
@@ -60,9 +58,10 @@
         th { background: #F4F7F6; padding: 15px; text-align: left; font-size: 11px; color: #777; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
 
-        .badge { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .badge { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; width: 100px; text-align: center; display: inline-block; }
         .bg-ok { background: #E6F7EC; color: var(--se-green); }
-        .bg-err { background: #FFEBEB; color: #D9534F; }
+        .bg-manquant { background: #FFEBEB; color: #D9534F; }
+        .bg-surplus { background: #FFF9E6; color: #F0AD4E; }
 
         .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; transition: 0.3s; }
         .btn-pdf:hover { background: #007D30; transform: translateY(-2px); }
@@ -71,10 +70,10 @@
 <body>
 
     <div class="sidebar">
-        <div class="brand"><i class="fa-solid fa-microchip"></i> SmartScan</div>
+        <div class="brand"><i class="fa-solid fa-leaf"></i> Schneider Electric</div>
         
         <label class="import-zone">
-            <i class="fa-solid fa-upload" style="font-size: 24px; color: #888;"></i>
+            <i class="fa-solid fa-file-csv" style="font-size: 24px; color: #888;"></i>
             <p style="font-size: 13px; margin: 10px 0 0;">Importer Base SAP</p>
             <input type="file" id="csv-file" accept=".csv" onclick="this.value=null;">
         </label>
@@ -82,7 +81,7 @@
         <button class="btn-pdf" onclick="exportPDF()"><i class="fa-solid fa-file-export"></i> EXPORTER LE RAPPORT</button>
 
         <div class="signature">
-            Propulsé par l'innovation <br><b>IDRISSI Lina</b>
+            Projet réalisé par <br><b>Lina IDRISSI</b>
         </div>
     </div>
 
@@ -90,7 +89,7 @@
         <header>
             <h1 style="margin:0; font-size: 28px;">Digital Inventory Dashboard</h1>
             <div style="background:white; padding:8px 15px; border-radius:20px; font-size:13px; font-weight:600; box-shadow: var(--shadow);">
-                <i class="fa-solid fa-clock"></i> <span id="current-date"></span>
+                <i class="fa-solid fa-calendar-check"></i> <span id="current-date"></span>
             </div>
         </header>
 
@@ -98,33 +97,33 @@
             <div class="stat-card card-1">
                 <h3>Références SAP</h3>
                 <div id="stat-refs-sap" class="value">0</div>
-                <div class="desc">Codes uniques chargés</div>
+                <div class="desc">Modèles uniques</div>
             </div>
             <div class="stat-card card-2">
                 <h3>Qté Totale SAP</h3>
                 <div id="stat-qty-sap" class="value">0</div>
-                <div class="desc">Pièces théoriques</div>
+                <div class="desc">Pièces attendues</div>
             </div>
             <div class="stat-card card-3">
-                <h3>Total Scanné</h3>
+                <h3>Articles Scannés</h3>
                 <div id="stat-qty-reel" class="value">0</div>
-                <div class="desc">Pièces comptées</div>
+                <div class="desc">Quantité réelle totale</div>
             </div>
             <div class="stat-card card-4">
-                <h3>Lignes Conform.</h3>
+                <h3>Lignes Conformes</h3>
                 <div id="stat-conf" class="value">0</div>
-                <div class="desc">Écart = 0</div>
+                <div class="desc">Stock exact</div>
             </div>
             <div class="stat-card card-5">
-                <h3>Lignes Écarts</h3>
+                <h3>Lignes Non Conformes</h3>
                 <div id="stat-non-conf" class="value">0</div>
                 <div class="desc">À régulariser</div>
             </div>
         </div>
 
         <div class="scan-zone">
-            <i class="fa-solid fa-expand" style="font-size: 30px; color: var(--se-green);"></i>
-            <input type="text" id="barcode-input" placeholder="Attente de base SAP..." disabled>
+            <i class="fa-solid fa-barcode" style="font-size: 30px; color: var(--se-green);"></i>
+            <input type="text" id="barcode-input" placeholder="Veuillez d'abord importer le fichier SAP..." disabled>
             <span id="feedback" style="font-weight: 700; font-size: 13px;"></span>
         </div>
 
@@ -134,9 +133,8 @@
                     <tr>
                         <th>Référence</th>
                         <th>Désignation</th>
-                        <th>SAP (Théo)</th>
-                        <th>Terrain (Réel)</th>
-                        <th>Écart</th>
+                        <th>Stock SAP</th>
+                        <th>Comptage Réel</th>
                         <th>Statut</th>
                     </tr>
                 </thead>
@@ -149,28 +147,50 @@
         let dbStock = {}; 
         let reelCount = {}; 
 
+        function cleanNumber(val) {
+            if (!val) return 0;
+            // Supprime les espaces et convertit en nombre
+            let n = parseInt(val.toString().replace(/\s/g, ''));
+            return isNaN(n) ? 0 : n;
+        }
+
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Réinitialisation complète
             dbStock = {}; reelCount = {}; 
             document.getElementById('table-body').innerHTML = "";
-            updateUI();
 
             Papa.parse(file, {
-                header: true, delimiter: ";", skipEmptyLines: true,
+                header: true, 
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                // On laisse PapaParse détecter le délimiteur (virgule ou point-virgule)
                 complete: function(results) {
+                    console.log("Données brutes détectées:", results.data);
+
                     results.data.forEach(row => {
-                        if (row.Reference) {
-                            const ref = row.Reference.trim().toUpperCase();
-                            dbStock[ref] = { designation: row.Designation || "N/A", theo: parseInt(row.StockTheorique) || 0 };
+                        // Nettoyage des noms de colonnes (enlève espaces et majuscules)
+                        let normalizedRow = {};
+                        Object.keys(row).forEach(key => {
+                            normalizedRow[key.trim()] = row[key];
+                        });
+
+                        const ref = normalizedRow["Reference"] ? normalizedRow["Reference"].toString().trim().toUpperCase() : null;
+                        
+                        if (ref) {
+                            dbStock[ref] = { 
+                                designation: normalizedRow["Designation"] || "N/A", 
+                                theo: cleanNumber(normalizedRow["StockTheorique"]) 
+                            };
                         }
                     });
+                    
                     document.getElementById('barcode-input').disabled = false;
-                    document.getElementById('barcode-input').placeholder = "Prêt pour le scan terrain...";
+                    document.getElementById('barcode-input').placeholder = "Scanner un produit...";
                     document.getElementById('barcode-input').focus();
                     updateUI();
+                    console.log("Base SAP chargée avec succès:", dbStock);
                 }
             });
         });
@@ -182,9 +202,9 @@
                     reelCount[code] = (reelCount[code] || 0) + 1;
                     updateUI();
                     renderTable();
-                    document.getElementById('feedback').innerText = "Vérifié : " + dbStock[code].designation;
+                    document.getElementById('feedback').innerText = "✅ " + dbStock[code].designation;
                     document.getElementById('feedback').style.color = "var(--se-green)";
-                } else {
+                } else if (code !== "") {
                     document.getElementById('feedback').innerText = "⚠️ RÉFÉRENCE INCONNUE";
                     document.getElementById('feedback').style.color = "red";
                 }
@@ -198,13 +218,22 @@
             let confCount = 0;
             let nonConfCount = 0;
 
-            Object.values(dbStock).forEach(item => totalQtySAP += item.theo);
-            
-            for (let ref in reelCount) {
-                totalQtyReel += reelCount[ref];
-                const ecart = reelCount[ref] - dbStock[ref].theo;
-                if (ecart === 0) confCount++; else nonConfCount++;
-            }
+            // Parcours de toutes les références du fichier SAP
+            Object.keys(dbStock).forEach(ref => {
+                const item = dbStock[ref];
+                totalQtySAP += item.theo;
+
+                // Si l'article a été scanné, on compare, sinon on considère le réel à 0
+                const reel = reelCount[ref] || 0;
+                if (reel === item.theo) {
+                    confCount++;
+                } else {
+                    nonConfCount++;
+                }
+            });
+
+            // Quantité totale scannée
+            Object.values(reelCount).forEach(qty => totalQtyReel += qty);
 
             document.getElementById('stat-refs-sap').innerText = Object.keys(dbStock).length;
             document.getElementById('stat-qty-sap').innerText = totalQtySAP;
@@ -216,20 +245,25 @@
         function renderTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
+            
+            // On affiche en priorité les articles scannés pour le feedback immédiat
             for (let ref in reelCount) {
                 const item = dbStock[ref];
                 const reel = reelCount[ref];
                 const ecart = reel - item.theo;
-                const statusClass = ecart === 0 ? 'bg-ok' : 'bg-err';
-                const statusTxt = ecart === 0 ? 'CONFORME' : 'ÉCART';
+                
+                let badgeClass = 'bg-ok';
+                let statusTxt = 'CONFORME';
+                
+                if (ecart < 0) { badgeClass = 'bg-manquant'; statusTxt = 'MANQUANT'; }
+                else if (ecart > 0) { badgeClass = 'bg-surplus'; statusTxt = 'SURPLUS'; }
                 
                 tbody.innerHTML += `<tr>
                     <td><b>${ref}</b></td>
                     <td>${item.designation}</td>
                     <td>${item.theo}</td>
                     <td><b>${reel}</b></td>
-                    <td style="color:${ecart < 0 ? 'red' : (ecart > 0 ? 'orange' : 'green')}"><b>${ecart > 0 ? '+' : ''}${ecart}</b></td>
-                    <td><span class="badge ${statusClass}">${statusTxt}</span></td>
+                    <td><span class="badge ${badgeClass}">${statusTxt} (${ecart > 0 ? '+' : ''}${ecart})</span></td>
                 </tr>`;
             }
         }
@@ -238,21 +272,18 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const now = new Date();
-            const dateStr = now.toLocaleDateString() + " " + now.toLocaleTimeString();
             
-            // Design Header Schneider
             doc.setFillColor(0, 150, 57);
             doc.rect(0, 0, 210, 45, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
-            doc.text("RAPPORT D'AUDIT INVENTAIRE", 15, 25);
+            doc.text("RAPPORT D'INVENTAIRE DIGITAL", 15, 25);
             doc.setFontSize(10);
-            doc.text("IDRISSI Lina - Digital Factory Solution", 15, 35);
+            doc.text("Lina IDRISSI | Schneider Electric", 15, 35);
 
-            // Dashboard Résumé
             doc.setTextColor(40, 46, 51);
             doc.setFontSize(11);
-            doc.text("SYNTHÈSE DES DONNÉES :", 15, 55);
+            doc.text("SYNTHÈSE DE L'INVENTAIRE :", 15, 55);
             
             doc.setFontSize(9);
             const stats = [
@@ -260,28 +291,27 @@
                 `Qté SAP : ${document.getElementById('stat-qty-sap').innerText}`,
                 `Qté Réelle : ${document.getElementById('stat-qty-reel').innerText}`,
                 `Conformes : ${document.getElementById('stat-conf').innerText}`,
-                `Écarts : ${document.getElementById('stat-non-conf').innerText}`
+                `Non Conformes : ${document.getElementById('stat-non-conf').innerText}`
             ];
             doc.text(stats.join("  |  "), 15, 62);
-            doc.text("Généré le : " + dateStr, 15, 68);
 
-            const data = Object.keys(reelCount).map(ref => [
-                ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], (reelCount[ref] - dbStock[ref].theo)
-            ]);
+            const data = Object.keys(reelCount).map(ref => {
+                const ecart = reelCount[ref] - dbStock[ref].theo;
+                const status = ecart === 0 ? "CONFORME" : (ecart < 0 ? "MANQUANT" : "SURPLUS");
+                return [ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], status + ` (${ecart})`];
+            });
 
             doc.autoTable({
-                head: [['Référence', 'Désignation', 'Stock SAP', 'Réel Scan', 'Écart']],
+                head: [['Référence', 'Désignation', 'Stock SAP', 'Réel Scan', 'Statut (Écart)']],
                 body: data,
-                startY: 75,
-                headStyles: { fillColor: [0, 150, 57], fontSize: 9 },
-                styles: { fontSize: 8 },
-                alternateRowStyles: { fillColor: [245, 245, 245] }
+                startY: 70,
+                headStyles: { fillColor: [0, 150, 57] }
             });
 
             doc.save(`Inventaire_Schneider_Lina.pdf`);
         }
 
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString();
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString();
     </script>
 </body>
 </html>
