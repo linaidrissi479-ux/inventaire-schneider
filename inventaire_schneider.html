@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schneider Electric - Inventaire par Lina IDRISSI</title>
+    <title>Schneider Electric - Inventaire par IDRISSI Lina</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -81,7 +81,7 @@
         <button class="btn-pdf" onclick="exportPDF()"><i class="fa-solid fa-file-export"></i> EXPORTER LE RAPPORT</button>
 
         <div class="signature">
-            Projet réalisé par <br><b>Lina IDRISSI</b>
+            réalisé par : <br><b>IDRISSI Lina</b>
         </div>
     </div>
 
@@ -100,7 +100,7 @@
                 <div class="desc">Modèles uniques</div>
             </div>
             <div class="stat-card card-2">
-                <h3>Qté Totale SAP</h3>
+                <h3>Quantité Totale SAP</h3>
                 <div id="stat-qty-sap" class="value">0</div>
                 <div class="desc">Pièces attendues</div>
             </div>
@@ -132,7 +132,7 @@
                 <thead>
                     <tr>
                         <th>Référence</th>
-                        <th>Désignation</th>
+                        <th>Désignation technique</th>
                         <th>Stock SAP</th>
                         <th>Comptage Réel</th>
                         <th>Statut</th>
@@ -149,7 +149,6 @@
 
         function cleanNumber(val) {
             if (!val) return 0;
-            // Supprime les espaces et convertit en nombre
             let n = parseInt(val.toString().replace(/\s/g, ''));
             return isNaN(n) ? 0 : n;
         }
@@ -162,22 +161,13 @@
             document.getElementById('table-body').innerHTML = "";
 
             Papa.parse(file, {
-                header: true, 
-                dynamicTyping: true,
-                skipEmptyLines: true,
-                // On laisse PapaParse détecter le délimiteur (virgule ou point-virgule)
+                header: true, dynamicTyping: true, skipEmptyLines: true,
                 complete: function(results) {
-                    console.log("Données brutes détectées:", results.data);
-
                     results.data.forEach(row => {
-                        // Nettoyage des noms de colonnes (enlève espaces et majuscules)
                         let normalizedRow = {};
-                        Object.keys(row).forEach(key => {
-                            normalizedRow[key.trim()] = row[key];
-                        });
+                        Object.keys(row).forEach(key => normalizedRow[key.trim()] = row[key]);
 
                         const ref = normalizedRow["Reference"] ? normalizedRow["Reference"].toString().trim().toUpperCase() : null;
-                        
                         if (ref) {
                             dbStock[ref] = { 
                                 designation: normalizedRow["Designation"] || "N/A", 
@@ -185,12 +175,9 @@
                             };
                         }
                     });
-                    
                     document.getElementById('barcode-input').disabled = false;
-                    document.getElementById('barcode-input').placeholder = "Scanner un produit...";
                     document.getElementById('barcode-input').focus();
                     updateUI();
-                    console.log("Base SAP chargée avec succès:", dbStock);
                 }
             });
         });
@@ -218,21 +205,13 @@
             let confCount = 0;
             let nonConfCount = 0;
 
-            // Parcours de toutes les références du fichier SAP
             Object.keys(dbStock).forEach(ref => {
                 const item = dbStock[ref];
                 totalQtySAP += item.theo;
-
-                // Si l'article a été scanné, on compare, sinon on considère le réel à 0
                 const reel = reelCount[ref] || 0;
-                if (reel === item.theo) {
-                    confCount++;
-                } else {
-                    nonConfCount++;
-                }
+                if (reel === item.theo) confCount++; else nonConfCount++;
             });
 
-            // Quantité totale scannée
             Object.values(reelCount).forEach(qty => totalQtyReel += qty);
 
             document.getElementById('stat-refs-sap').innerText = Object.keys(dbStock).length;
@@ -245,16 +224,11 @@
         function renderTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
-            
-            // On affiche en priorité les articles scannés pour le feedback immédiat
             for (let ref in reelCount) {
                 const item = dbStock[ref];
                 const reel = reelCount[ref];
                 const ecart = reel - item.theo;
-                
-                let badgeClass = 'bg-ok';
-                let statusTxt = 'CONFORME';
-                
+                let badgeClass = 'bg-ok', statusTxt = 'CONFORME';
                 if (ecart < 0) { badgeClass = 'bg-manquant'; statusTxt = 'MANQUANT'; }
                 else if (ecart > 0) { badgeClass = 'bg-surplus'; statusTxt = 'SURPLUS'; }
                 
@@ -279,7 +253,7 @@
             doc.setFontSize(22);
             doc.text("RAPPORT D'INVENTAIRE DIGITAL", 15, 25);
             doc.setFontSize(10);
-            doc.text("Lina IDRISSI | Schneider Electric", 15, 35);
+            doc.text("réalisé par : IDRISSI Lina | Schneider Electric", 15, 35);
 
             doc.setTextColor(40, 46, 51);
             doc.setFontSize(11);
@@ -308,10 +282,11 @@
                 headStyles: { fillColor: [0, 150, 57] }
             });
 
-            doc.save(`Inventaire_Schneider_Lina.pdf`);
+            doc.save(`Inventaire_Digital_IDRISSI_Lina.pdf`);
         }
 
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString();
+        // Affiche uniquement la date
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString();
     </script>
 </body>
 </html>
