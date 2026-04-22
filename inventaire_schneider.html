@@ -74,13 +74,10 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            // FORCER LE RESET COMPLET DES VARIABLES
             dbStock = {}; 
             reelCount = {}; 
             document.getElementById('table-body').innerHTML = ""; 
-            document.getElementById('scan-feedback').innerText = "Nouvelle base SAP chargée. Inventaire réinitialisé.";
-            document.getElementById('scan-feedback').style.color = "blue";
-
+            
             Papa.parse(file, {
                 header: true,
                 delimiter: ";",
@@ -94,13 +91,11 @@
                             };
                         }
                     });
-                    const status = document.getElementById('db-status');
-                    status.innerText = "✅ BASE SAP CHARGÉE";
-                    status.className = "status-box status-on";
-                    const input = document.getElementById('barcode-input');
-                    input.disabled = false;
-                    input.placeholder = "Prêt à scanner...";
-                    input.focus();
+                    document.getElementById('db-status').innerText = "✅ BASE SAP CHARGÉE";
+                    document.getElementById('db-status').className = "status-box status-on";
+                    document.getElementById('barcode-input').disabled = false;
+                    document.getElementById('barcode-input').placeholder = "Prêt à scanner...";
+                    document.getElementById('barcode-input').focus();
                 }
             });
         });
@@ -112,8 +107,6 @@
                 if (dbStock[code]) {
                     reelCount[code] = (reelCount[code] || 0) + 1;
                     updateTable();
-                    document.getElementById('scan-feedback').innerText = "✅ " + dbStock[code].designation;
-                    document.getElementById('scan-feedback').style.color = "#009639";
                 }
                 input.value = "";
             }
@@ -133,15 +126,38 @@
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            
+            // Récupération de la date et l'heure actuelles
+            const maintenant = new Date();
+            const dateHeure = maintenant.toLocaleDateString() + " à " + maintenant.toLocaleTimeString();
+
             doc.setFontSize(18);
             doc.setTextColor(0, 150, 57);
             doc.text("État des Écarts de Stock", 14, 20);
-            const tableData = Object.keys(reelCount).map(ref => [ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], reelCount[ref] - dbStock[ref].theo]);
-            doc.autoTable({ head: [['Référence', 'Désignation', 'SAP', 'Réel', 'Écart']], body: tableData, startY: 30, headStyles: { fillColor: [0, 150, 57] } });
+            
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text("Établi le : " + dateHeure, 14, 28); // Affichage de la date et l'heure
+
+            const tableData = Object.keys(reelCount).map(ref => [
+                ref, 
+                dbStock[ref].designation, 
+                dbStock[ref].theo, 
+                reelCount[ref], 
+                reelCount[ref] - dbStock[ref].theo
+            ]);
+
+            doc.autoTable({ 
+                head: [['Référence', 'Désignation', 'SAP', 'Réel', 'Écart']], 
+                body: tableData, 
+                startY: 35, 
+                headStyles: { fillColor: [0, 150, 57] } 
+            });
+            
             doc.save("Etat_Ecarts_Stock.pdf");
         }
+        
         document.getElementById('date-label').innerText = "Session du " + new Date().toLocaleDateString();
     </script>
 </body>
 </html>
-
