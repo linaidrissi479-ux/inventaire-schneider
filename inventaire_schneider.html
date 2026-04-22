@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schneider Electric - Inventaire par IDRISSI Lina</title>
+    <title>Schneider Electric - Digital Inventory Dashboard</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -20,6 +20,7 @@
 
         body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-body); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
+        /* Sidebar */
         .sidebar { width: 280px; background: white; padding: 30px; display: flex; flex-direction: column; border-right: 1px solid #E1E8ED; }
         .brand { font-size: 22px; font-weight: 800; color: var(--se-green); margin-bottom: 40px; display: flex; align-items: center; }
         .brand i { margin-right: 12px; }
@@ -27,16 +28,15 @@
         .import-zone { background: #F4F7F6; padding: 20px; border-radius: 12px; border: 2px dashed #C3CBD1; text-align: center; cursor: pointer; transition: 0.3s; }
         .import-zone:hover { border-color: var(--se-green); background: #e6f7ec; }
         .import-zone input { display: none; }
-        
-        .signature { margin-top: auto; padding: 15px; border-top: 1px solid #eee; font-size: 13px; color: #555; text-align: center; }
-        .signature b { color: var(--se-green); font-weight: 800; }
 
+        /* Main Content */
         .main-content { flex: 1; padding: 40px; overflow-y: auto; }
-        header { margin-bottom: 20px; }
-        header h1 { margin: 0; font-size: 28px; color: var(--se-dark); }
+        header { margin-bottom: 10px; }
+        header h1 { margin: 0; font-size: 28px; color: var(--se-dark); font-weight: 800; }
         
-        .date-info { margin-bottom: 15px; font-size: 14px; font-weight: 600; color: #666; display: flex; align-items: center; gap: 8px; }
+        .date-info { margin-bottom: 20px; font-size: 14px; font-weight: 600; color: #666; display: flex; align-items: center; gap: 8px; }
 
+        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 18px; border-radius: 16px; box-shadow: var(--shadow); border-top: 4px solid #eee; }
         .stat-card h3 { margin: 0; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -62,7 +62,7 @@
         .bg-manquant { background: #FFEBEB; color: #D9534F; }
         .bg-surplus { background: #FFF9E6; color: #F0AD4E; }
 
-        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; transition: 0.3s; }
+        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: auto; width: 100%; transition: 0.3s; }
         .btn-pdf:hover { background: #007D30; transform: translateY(-2px); }
     </style>
 </head>
@@ -78,10 +78,6 @@
         </label>
 
         <button class="btn-pdf" onclick="exportPDF()"><i class="fa-solid fa-file-export"></i> EXPORTER LE RAPPORT</button>
-
-        <div class="signature">
-            réalisé par : <br><b>IDRISSI Lina</b>
-        </div>
     </div>
 
     <div class="main-content">
@@ -118,7 +114,7 @@
 
         <div class="scan-zone">
             <i class="fa-solid fa-barcode" style="font-size: 30px; color: var(--se-green);"></i>
-            <input type="text" id="barcode-input" placeholder="Scanner un produit..." disabled>
+            <input type="text" id="barcode-input" placeholder="Veuillez charger la base SAP..." disabled>
         </div>
 
         <div class="table-container">
@@ -168,6 +164,7 @@
                         }
                     });
                     document.getElementById('barcode-input').disabled = false;
+                    document.getElementById('barcode-input').placeholder = "Scanner un produit...";
                     document.getElementById('barcode-input').focus();
                     updateUI();
                 }
@@ -231,17 +228,25 @@
             const moisArr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
             const nomMois = moisArr[now.getMonth()];
 
+            // Green header
             doc.setFillColor(0, 150, 57);
-            doc.rect(0, 0, 210, 45, 'F');
+            doc.rect(0, 0, 210, 40, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
             doc.text("Rapport inventaire tournant", 15, 25);
-            doc.setFontSize(10);
-            doc.text("réalisé par : IDRISSI Lina | Schneider Electric", 15, 35);
-
+            
+            // Meta info ABOVE synthesis
             doc.setTextColor(40, 46, 51);
+            doc.setFontSize(10);
+            doc.text(`Document généré le : ${dateStr} à ${heureStr}`, 15, 52);
+
+            // Synthesis Title
             doc.setFontSize(11);
-            doc.text("SYNTHÈSE DE L'INVENTAIRE :", 15, 55);
+            doc.setFont(undefined, 'bold');
+            doc.text("SYNTHÈSE DE L'INVENTAIRE :", 15, 60);
+            
+            // Counters line
+            doc.setFont(undefined, 'normal');
             doc.setFontSize(9);
             const stats = [
                 `Ref. SAP : ${document.getElementById('stat-refs-sap').innerText}`,
@@ -250,8 +255,7 @@
                 `Conformes : ${document.getElementById('stat-conf').innerText}`,
                 `Non Conformes : ${document.getElementById('stat-non-conf').innerText}`
             ];
-            doc.text(stats.join("  |  "), 15, 62);
-            doc.text(`Document généré le : ${dateStr} à ${heureStr}`, 15, 68);
+            doc.text(stats.join("  |  "), 15, 67);
 
             const data = Object.keys(reelCount).map(ref => {
                 const ecart = reelCount[ref] - dbStock[ref].theo;
@@ -265,6 +269,7 @@
                 startY: 75,
                 headStyles: { fillColor: [0, 150, 57] }
             });
+            
             doc.save(`inventaire ${nomMois}.pdf`);
         }
         document.getElementById('current-date').innerText = new Date().toLocaleDateString();
