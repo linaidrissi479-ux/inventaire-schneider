@@ -32,8 +32,11 @@
         .signature b { color: var(--se-green); font-weight: 800; }
 
         .main-content { flex: 1; padding: 40px; overflow-y: auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        header { margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 28px; color: var(--se-dark); }
         
+        .date-info { margin-bottom: 15px; font-size: 14px; font-weight: 600; color: #666; display: flex; align-items: center; gap: 8px; }
+
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 18px; border-radius: 16px; box-shadow: var(--shadow); border-top: 4px solid #eee; }
         .stat-card h3 { margin: 0; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -83,11 +86,12 @@
 
     <div class="main-content">
         <header>
-            <h1 style="margin:0; font-size: 28px;">Digital Inventory Dashboard</h1>
-            <div style="background:white; padding:8px 15px; border-radius:20px; font-size:13px; font-weight:600; box-shadow: var(--shadow);">
-                <i class="fa-solid fa-calendar-check"></i> <span id="current-date"></span>
-            </div>
+            <h1>Digital Inventory Dashboard</h1>
         </header>
+
+        <div class="date-info">
+            <i class="fa-solid fa-calendar-day" style="color:var(--se-green)"></i> Généré le : <span id="current-date"></span>
+        </div>
 
         <div class="dashboard">
             <div class="stat-card card-1">
@@ -164,7 +168,6 @@
                         }
                     });
                     document.getElementById('barcode-input').disabled = false;
-                    document.getElementById('barcode-input').placeholder = "Prêt pour scan...";
                     document.getElementById('barcode-input').focus();
                     updateUI();
                 }
@@ -225,7 +228,6 @@
             const now = new Date();
             const dateStr = now.toLocaleDateString();
             const heureStr = now.toLocaleTimeString(); 
-
             const moisArr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
             const nomMois = moisArr[now.getMonth()];
 
@@ -249,7 +251,7 @@
                 `Non Conformes : ${document.getElementById('stat-non-conf').innerText}`
             ];
             doc.text(stats.join("  |  "), 15, 62);
-            doc.text(`Généré le : ${dateStr} à ${heureStr}`, 15, 68);
+            doc.text(`Document généré le : ${dateStr} à ${heureStr}`, 15, 68);
 
             const data = Object.keys(reelCount).map(ref => {
                 const ecart = reelCount[ref] - dbStock[ref].theo;
