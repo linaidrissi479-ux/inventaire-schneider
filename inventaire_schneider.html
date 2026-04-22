@@ -40,7 +40,6 @@
         .stat-card { background: white; padding: 18px; border-radius: 16px; box-shadow: var(--shadow); border-top: 4px solid #eee; }
         .stat-card h3 { margin: 0; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-card .value { font-size: 24px; font-weight: 800; color: var(--se-dark); margin: 8px 0; }
-        .stat-card .desc { font-size: 10px; color: #aaa; }
         
         .card-1 { border-color: #007bff; }
         .card-2 { border-color: #6c757d; }
@@ -63,8 +62,7 @@
         .bg-manquant { background: #FFEBEB; color: #D9534F; }
         .bg-surplus { background: #FFF9E6; color: #F0AD4E; }
 
-        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; transition: 0.3s; }
-        .btn-pdf:hover { background: #007D30; transform: translateY(-2px); }
+        .btn-pdf { background: var(--se-green); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; }
     </style>
 </head>
 <body>
@@ -97,33 +95,28 @@
             <div class="stat-card card-1">
                 <h3>Références SAP</h3>
                 <div id="stat-refs-sap" class="value">0</div>
-                <div class="desc">Modèles uniques</div>
             </div>
             <div class="stat-card card-2">
                 <h3>Quantité Totale SAP</h3>
                 <div id="stat-qty-sap" class="value">0</div>
-                <div class="desc">Pièces attendues</div>
             </div>
             <div class="stat-card card-3">
                 <h3>Articles Scannés</h3>
                 <div id="stat-qty-reel" class="value">0</div>
-                <div class="desc">Quantité réelle totale</div>
             </div>
             <div class="stat-card card-4">
                 <h3>Lignes Conformes</h3>
                 <div id="stat-conf" class="value">0</div>
-                <div class="desc">Stock exact</div>
             </div>
             <div class="stat-card card-5">
                 <h3>Lignes Non Conformes</h3>
                 <div id="stat-non-conf" class="value">0</div>
-                <div class="desc">À régulariser</div>
             </div>
         </div>
 
         <div class="scan-zone">
             <i class="fa-solid fa-barcode" style="font-size: 30px; color: var(--se-green);"></i>
-            <input type="text" id="barcode-input" placeholder="Veuillez d'abord importer le fichier SAP..." disabled>
+            <input type="text" id="barcode-input" placeholder="Scanner un produit..." disabled>
             <span id="feedback" style="font-weight: 700; font-size: 13px;"></span>
         </div>
 
@@ -156,7 +149,6 @@
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             dbStock = {}; reelCount = {}; 
             document.getElementById('table-body').innerHTML = "";
 
@@ -166,7 +158,6 @@
                     results.data.forEach(row => {
                         let normalizedRow = {};
                         Object.keys(row).forEach(key => normalizedRow[key.trim()] = row[key]);
-
                         const ref = normalizedRow["Reference"] ? normalizedRow["Reference"].toString().trim().toUpperCase() : null;
                         if (ref) {
                             dbStock[ref] = { 
@@ -176,6 +167,7 @@
                         }
                     });
                     document.getElementById('barcode-input').disabled = false;
+                    document.getElementById('barcode-input').placeholder = "Prêt pour scan...";
                     document.getElementById('barcode-input').focus();
                     updateUI();
                 }
@@ -200,20 +192,14 @@
         });
 
         function updateUI() {
-            let totalQtySAP = 0;
-            let totalQtyReel = 0;
-            let confCount = 0;
-            let nonConfCount = 0;
-
+            let totalQtySAP = 0, totalQtyReel = 0, confCount = 0, nonConfCount = 0;
             Object.keys(dbStock).forEach(ref => {
                 const item = dbStock[ref];
                 totalQtySAP += item.theo;
                 const reel = reelCount[ref] || 0;
                 if (reel === item.theo) confCount++; else nonConfCount++;
             });
-
             Object.values(reelCount).forEach(qty => totalQtyReel += qty);
-
             document.getElementById('stat-refs-sap').innerText = Object.keys(dbStock).length;
             document.getElementById('stat-qty-sap').innerText = totalQtySAP;
             document.getElementById('stat-qty-reel').innerText = totalQtyReel;
@@ -231,7 +217,6 @@
                 let badgeClass = 'bg-ok', statusTxt = 'CONFORME';
                 if (ecart < 0) { badgeClass = 'bg-manquant'; statusTxt = 'MANQUANT'; }
                 else if (ecart > 0) { badgeClass = 'bg-surplus'; statusTxt = 'SURPLUS'; }
-                
                 tbody.innerHTML += `<tr>
                     <td><b>${ref}</b></td>
                     <td>${item.designation}</td>
@@ -247,18 +232,21 @@
             const doc = new jsPDF();
             const now = new Date();
             
+            // Mois en lettres pour le nom du fichier
+            const moisArr = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+            const nomMois = moisArr[now.getMonth()];
+
             doc.setFillColor(0, 150, 57);
             doc.rect(0, 0, 210, 45, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
-            doc.text("RAPPORT INVENTAIRE TOURNANT ", 15, 25);
+            doc.text("Rapport inventaire tournant", 15, 25);
             doc.setFontSize(10);
             doc.text("réalisé par : IDRISSI Lina | Schneider Electric", 15, 35);
 
             doc.setTextColor(40, 46, 51);
             doc.setFontSize(11);
             doc.text("SYNTHÈSE DE L'INVENTAIRE :", 15, 55);
-            
             doc.setFontSize(9);
             const stats = [
                 `Ref. SAP : ${document.getElementById('stat-refs-sap').innerText}`,
@@ -268,24 +256,21 @@
                 `Non Conformes : ${document.getElementById('stat-non-conf').innerText}`
             ];
             doc.text(stats.join("  |  "), 15, 62);
-
             const data = Object.keys(reelCount).map(ref => {
                 const ecart = reelCount[ref] - dbStock[ref].theo;
                 const status = ecart === 0 ? "CONFORME" : (ecart < 0 ? "MANQUANT" : "SURPLUS");
                 return [ref, dbStock[ref].designation, dbStock[ref].theo, reelCount[ref], status + ` (${ecart})`];
             });
-
             doc.autoTable({
                 head: [['Référence', 'Désignation', 'Stock SAP', 'Réel Scan', 'Statut (Écart)']],
                 body: data,
                 startY: 70,
                 headStyles: { fillColor: [0, 150, 57] }
             });
-
-            doc.save(`Inventaire_Digital_IDRISSI_Lina.pdf`);
+            
+            // Sauvegarde avec le nom demandé
+            doc.save(`inventaire ${nomMois}.pdf`);
         }
-
-        // Affiche uniquement la date
         document.getElementById('current-date').innerText = new Date().toLocaleDateString();
     </script>
 </body>
