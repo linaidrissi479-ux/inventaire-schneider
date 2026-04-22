@@ -10,21 +10,28 @@
     <style>
         :root { --green-se: #009639; --bg-gray: #f4f5f7; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-gray); margin: 0; display: flex; height: 100vh; }
+        
         .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; padding: 25px; display: flex; flex-direction: column; }
         .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        
         .status-box { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: bold; text-align: center; }
         .status-off { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .status-on { background: #e6f7ec; color: var(--green-se); border: 1px solid var(--green-se); }
+        
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
         .instruction { font-size: 12px; color: #666; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; }
+        
         input[type="file"] { margin-bottom: 10px; width: 100%; }
-        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; box-sizing: border-box; }
         input[type="text"]:focus { border-color: var(--green-se); }
+
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
         th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid #eee; font-size: 12px; color: #555; }
         td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        
         .btn-pdf { background: var(--green-se); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; font-size: 14px; }
         .btn-pdf:hover { background: #007d30; }
+        
         .badge-neg { color: #d9534f; font-weight: bold; }
         .badge-pos { color: var(--green-se); font-weight: bold; }
     </style>
@@ -37,7 +44,7 @@
         <div class="card" style="padding: 15px; border: 1px dashed var(--green-se); margin-bottom: 15px;">
             <div class="instruction">1. Importer l'extraction SAP</div>
             <input type="file" id="csv-file" accept=".csv">
-            <p style="font-size: 10px; color: #888; margin-top: 10px;">Format : .csv (Semicolon) avec Reference; Designation; StockTheorique</p>
+            <p style="font-size: 10px; color: #888; margin-top: 10px;">Format requis : .csv avec Reference; Designation; StockTheorique</p>
         </div>
 
         <div id="db-status" class="status-box status-off">❌ EN ATTENTE DU FICHIER</div>
@@ -75,10 +82,10 @@
     </div>
 
     <script>
-        let dbStock = {};
-        let reelCount = {};
+        let dbStock = {}; // Données SAP
+        let reelCount = {}; // Données Scan Terrain
 
-        // GESTION DU FICHIER CSV
+        // 1. GESTION DU CHARGEMENT DU FICHIER CSV
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -88,7 +95,12 @@
                 delimiter: ";",
                 skipEmptyLines: true,
                 complete: function(results) {
+                    // RÉINITIALISATION COMPLÈTE À CHAQUE NOUVEAU FICHIER
                     dbStock = {}; 
+                    reelCount = {}; 
+                    document.getElementById('table-body').innerHTML = "";
+                    document.getElementById('scan-feedback').innerText = "";
+                    
                     results.data.forEach(row => {
                         if (row.Reference) {
                             dbStock[row.Reference.trim().toUpperCase()] = {
@@ -97,6 +109,8 @@
                             };
                         }
                     });
+                    
+                    // Mise à jour de l'interface
                     const status = document.getElementById('db-status');
                     status.innerText = "✅ BASE SAP CHARGÉE";
                     status.className = "status-box status-on";
@@ -109,7 +123,7 @@
             });
         });
 
-        // GESTION DU SCAN (CLAVIER OU DOUCHETTE)
+        // 2. GESTION DU SCAN
         const input = document.getElementById('barcode-input');
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -129,6 +143,7 @@
             }
         });
 
+        // 3. MISE À JOUR VISUELLE DU TABLEAU
         function updateTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
@@ -147,18 +162,19 @@
             }
         }
 
-        // GÉNÉRATION PDF AVEC LE NOUVEAU TITRE
+        // 4. GÉNÉRATION DU PDF
         function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
+            // Titre du rapport validé
             doc.setFontSize(18);
             doc.setTextColor(0, 150, 57);
             doc.text("État des Écarts de Stock", 14, 20);
             
             doc.setFontSize(10);
             doc.setTextColor(100);
-            doc.text("Rapport généré le : " + new Date().toLocaleString(), 14, 28);
+            doc.text("Rapport d'inventaire Schneider Electric - " + new Date().toLocaleString(), 14, 28);
             
             const tableData = Object.keys(reelCount).map(ref => [
                 ref, 
@@ -179,7 +195,7 @@
             doc.save("Etat_Ecarts_Stock.pdf");
         }
 
-        // Affichage de la date
+        // Affichage de la date du jour
         const d = new Date();
         document.getElementById('date-label').innerText = "Session d'inventaire du " + d.toLocaleDateString();
     </script>
